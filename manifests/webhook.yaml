@@ -1,0 +1,28 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+ name: nodedisruptionbudget.kube-system.cluster.local
+ namespace: kube-system
+webhooks:
+- name: nodedisruptionbudget.kube-system.cluster.local
+  clientConfig:
+    service:
+      name: nodedisruptionbudget
+      namespace: kube-system
+      path: "/validate"
+    caBundle: $(cat certs/ca.pem | base64 | tr -d '\n')
+  rules:
+  - apiGroups: [""]
+    apiVersions: ["v1"]
+    resources: ["nodes"]
+    operations: ["DELETE"]
+    scope: "*"
+  #namespaceSelector:
+  #  matchExpressions:
+  #  - key: name
+  #    operator: In
+  #    values: ["default"]
+  admissionReviewVersions: ["v1"]
+  sideEffects: None
+  failurePolicy: Fail
+
