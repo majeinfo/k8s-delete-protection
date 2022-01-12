@@ -3,12 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
-	"log"
-	"net/http"
 	admission "k8s.io/api/admission/v1beta1"
 	batchv1 "k8s.io/api/batch/v1"
 	k8meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"net/http"
 )
 
 type AdmissionHandler struct {
@@ -22,23 +22,24 @@ func (handler *AdmissionHandler) handler(w http.ResponseWriter, r *http.Request)
 		if err == nil {
 			body = data
 		} else {
-			log.Printf("Error %v", err)
+			log.Infof("Error %v", err)
 			http.Error(w, "Error reading body", http.StatusBadRequest)
 			return
 		}
 	}
 	if len(body) == 0 {
-		log.Printf("Body is empty")
+		log.Error("Body is empty")
 		http.Error(w, "Body is empty", http.StatusBadRequest)
 		return
 	}
 
 	request := admission.AdmissionReview{}
 	if err := json.Unmarshal(body, &request); err != nil {
-		log.Printf("Error parsing body %v", err)
+		log.Errorf("Error parsing body %v", err)
 		http.Error(w, "Error parsing body", http.StatusBadRequest)
 		return
 	}
+	log.Debugf("AdmissionReview %v", request)
 
 	result, err := checkRequest(request.Request, handler)
 	response := admission.AdmissionResponse{
@@ -61,34 +62,38 @@ func (handler *AdmissionHandler) handler(w http.ResponseWriter, r *http.Request)
 
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error encoding response %v", err), http.StatusInternalServerError)
+		log.Debugf("AdmissionResponse %v", outReview)
 	} else {
 		w.Header().Set("Content-Type", "application/json")
 		if _, err := w.Write(json); err != nil {
-			log.Printf("Error writing response %v", err)
+			log.Errorf("Error writing response %v", err)
 			http.Error(w, fmt.Sprintf("Error writing response: %v", err), http.StatusInternalServerError)
 		}
 	}
 }
 
 func checkRequest(request *admission.AdmissionRequest, handler *AdmissionHandler) (bool, error) {
+	/*
 	if request.Namespace == "kube-system" {
-		log.Printf("Warning: Controller is applied to kube-system, skipping")
+		log.Warnf("Warning: Controller is applied to kube-system, skipping")
 		return true, nil
 	}
 
 	if request.RequestKind.Group != "batch" || request.RequestKind.Kind != "Job" || request.Operation != "CREATE" {
-		log.Printf("Skipped resource [%v,%v,%v], check rules to exclude this resource", request.RequestKind.Group, request.RequestKind.Kind, request.Operation)
+		log.Infof("Skipped resource [%v,%v,%v], check rules to exclude this resource", request.RequestKind.Group, request.RequestKind.Kind, request.Operation)
 		return true, nil
 	}
 
 	var job *batchv1.Job
 	err := json.Unmarshal(request.Object.Raw, &job)
 	if err != nil {
-		log.Printf("Error parsing job %v", err)
+		log.Errorf("Error parsing job %v", err)
 		return true, nil
 	}
 
 	return checkJob(job, handler)
+	*/
+	return true, nil
 }
 
 // Check that the applied job has all the security properties set

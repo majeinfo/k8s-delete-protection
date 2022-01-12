@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"os/signal"
@@ -25,8 +25,7 @@ func main() {
 
 	certs, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		log.Printf("Error loading key pair: %v", err)
-		os.Exit(1)
+		log.Fatalf("Error loading key pair: %v", err)
 	}
 
 	server := &http.Server{
@@ -45,8 +44,7 @@ func main() {
 	go func() {
 		log.Printf("Listening on port %v", port)
 		if err := server.ListenAndServeTLS("", ""); err != nil {
-			log.Printf("Failed to listen and serve webhook server: %v", err)
-			os.Exit(1)
+			log.Fatalf("Failed to listen and serve webhook server: %v", err)
 		}
 	}()
 
