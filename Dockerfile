@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY . .
 
-RUN cd main && CGO_ENABLED=0 go build -o /go/bin/nodedisruptionbudget/main
+RUN cd main && CGO_ENABLED=0 go build -o /go/bin/nodedisruptionbudget
 
 FROM scratch
 COPY --from=builder /go/bin/nodedisruptionbudget /go/bin/nodedisruptionbudget

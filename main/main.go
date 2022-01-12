@@ -17,8 +17,8 @@ var (
 )
 
 func main() {
-	flag.StringVar(&certFile, "certFile", "server.pem", "File containing the x509 Certificate for HTTPS")
-	flag.StringVar(&keyFile, "keyFile", "server-key.pem", "File containing the x509 private key for the given certificate")
+	flag.StringVar(&certFile, "cert", "server.pem", "File containing the x509 Certificate for HTTPS")
+	flag.StringVar(&keyFile, "key", "server-key.pem", "File containing the x509 private key for the given certificate")
 	flag.StringVar(&port, "port", "8443", "Port to listen")
 
 	flag.Parse()
