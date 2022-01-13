@@ -14,14 +14,22 @@ import (
 
 var (
 	certFile, keyFile, port string
+	verbose bool
 )
 
 func main() {
 	flag.StringVar(&certFile, "cert", "server.pem", "File containing the x509 Certificate for HTTPS")
 	flag.StringVar(&keyFile, "key", "server-key.pem", "File containing the x509 private key for the given certificate")
 	flag.StringVar(&port, "port", "8443", "Port to listen")
+	flag.BoolVar(&verbose, "verbose", false, "Verbosity mode for debugging")
 
 	flag.Parse()
+
+	log_level := log.InfoLevel
+	if verbose {
+		log_level = log.DebugLevel
+	}
+	log.SetLevel(log_level)
 
 	certs, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {

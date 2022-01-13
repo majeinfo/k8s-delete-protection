@@ -59,10 +59,11 @@ func (handler *AdmissionHandler) handler(w http.ResponseWriter, r *http.Request)
 		Response: &response,
 	}
 	json, err := json.Marshal(outReview)
+	log.Debugf("AdmissionResponse %v", outReview)
 
 	if err != nil {
+		log.Errorf("json.Marshal error %v", err)
 		http.Error(w, fmt.Sprintf("Error encoding response %v", err), http.StatusInternalServerError)
-		log.Debugf("AdmissionResponse %v", outReview)
 	} else {
 		w.Header().Set("Content-Type", "application/json")
 		if _, err := w.Write(json); err != nil {
