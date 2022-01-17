@@ -6,7 +6,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	admission "k8s.io/api/admission/v1beta1"
-	batchv1 "k8s.io/api/batch/v1"
 	k8meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 )
@@ -39,7 +38,8 @@ func (handler *AdmissionHandler) handler(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "Error parsing body", http.StatusBadRequest)
 		return
 	}
-	log.Debugf("AdmissionReview %v", request)
+	log.Debugf("AdmissionReview %s, %s, %s, %v, %v", request.Request.Name, request.Request.Namespace,
+		request.Request.Operation, request.Request.Kind, request.Request.Resource)
 
 	result, err := checkRequest(request.Request, handler)
 	response := admission.AdmissionResponse{
@@ -59,7 +59,10 @@ func (handler *AdmissionHandler) handler(w http.ResponseWriter, r *http.Request)
 		Response: &response,
 	}
 	json, err := json.Marshal(outReview)
-	log.Debugf("AdmissionResponse %v", outReview)
+	log.Debugf("AdmissionResponse %v", outReview.Response.Allowed)
+	if !outReview.Response.Allowed {
+		log.Debugf("Failed reason: %v", outReview.Response.Result.Status)
+	}
 
 	if err != nil {
 		log.Errorf("json.Marshal error %v", err)
@@ -74,146 +77,16 @@ func (handler *AdmissionHandler) handler(w http.ResponseWriter, r *http.Request)
 }
 
 func checkRequest(request *admission.AdmissionRequest, handler *AdmissionHandler) (bool, error) {
-	/*
-	if request.Namespace == "kube-system" {
-		log.Warnf("Warning: Controller is applied to kube-system, skipping")
-		return true, nil
-	}
-
-	if request.RequestKind.Group != "batch" || request.RequestKind.Kind != "Job" || request.Operation != "CREATE" {
+	// Sanity checks
+	if request.Operation != "DELETE" {
 		log.Infof("Skipped resource [%v,%v,%v], check rules to exclude this resource", request.RequestKind.Group, request.RequestKind.Kind, request.Operation)
 		return true, nil
 	}
 
-	var job *batchv1.Job
-	err := json.Unmarshal(request.Object.Raw, &job)
-	if err != nil {
-		log.Errorf("Error parsing job %v", err)
-		return true, nil
-	}
-
-	return checkJob(job, handler)
-	*/
-	return true, nil
-}
-
-// Check that the applied job has all the security properties set
-func checkJob(request *batchv1.Job, handler *AdmissionHandler) (bool, error) {
-	if request.Spec.ActiveDeadlineSeconds == nil || *request.Spec.ActiveDeadlineSeconds == 0 {
-		return false, fmt.Errorf("activeDeadlineSeconds must be set")
-	}
-
-	if request.Spec.BackoffLimit == nil || *request.Spec.BackoffLimit != 1 {
-		return false, fmt.Errorf("backoffLimit mus be set to 1")
-	}
-
-	if request.Spec.Parallelism != nil && *request.Spec.Parallelism != 1 {
-		return false, fmt.Errorf("Parallelism must not be used")
-	}
-
-	if request.Spec.Completions != nil && *request.Spec.Completions != 1 {
-		return false, fmt.Errorf("Completions must not be used")
-	}
-
-	// TTLSecondsAfterFinished is an alpha feature, and must be enabled manually
-	//if request.Spec.TTLSecondsAfterFinished == nil || *request.Spec.TTLSecondsAfterFinished == 0 {
-	//	return false, fmt.Errorf("ttlSecondsAfterFinished must be set greater than 0")
-	//}
-
-	spec := request.Spec.Template.Spec
-
-	if spec.HostNetwork != false {
-		return false, fmt.Errorf("HostNetwork must not be set")
-	}
-
-	if spec.HostIPC != false {
-		return false, fmt.Errorf("HostIPC must be false")
-	}
-
-	if spec.HostPID != false {
-		return false, fmt.Errorf("HostPID must be false")
-	}
-
-	if spec.ServiceAccountName != "" {
-		return false, fmt.Errorf("You must not set a serviceAccount")
-	}
-
-	if spec.RestartPolicy != "Never" {
-		return false, fmt.Errorf("Job is not allowed to restart")
-	}
-
-	if spec.SecurityContext != nil && len(spec.SecurityContext.Sysctls) > 0 {
-		return false, fmt.Errorf("Sysctls must be empty")
-	}
-
-	for _, container := range spec.Containers {
-		if container.SecurityContext == nil {
-			return false, fmt.Errorf("SecurityContext must be set for the container")
-		}
-		context := *container.SecurityContext
-
-		if context.RunAsNonRoot == nil || *context.RunAsNonRoot != true {
-			return false, fmt.Errorf("RunAsNonRoot must be set per container")
-		}
-
-		if context.AllowPrivilegeEscalation == nil || *context.AllowPrivilegeEscalation != false {
-			return false, fmt.Errorf("AllowPrivilegeEscalation must be false per container")
-		}
-
-		if context.Privileged == nil || *context.Privileged != false {
-			return false, fmt.Errorf("Privileged must be false per container")
-		}
-
-		if context.Capabilities == nil || len(context.Capabilities.Drop) != 1 || context.Capabilities.Drop[0] != "all" {
-			return false, fmt.Errorf("Container must drop all capabilities (Only 'all' must be set)")
-		}
-
-		if len(context.Capabilities.Add) > 0 {
-			return false, fmt.Errorf("Container must not add any capabilites")
-		}
-
-		if len(container.Ports) > 0 {
-			return false, fmt.Errorf("No port must be defined")
-		}
-
-		if len(container.EnvFrom) > 0 {
-			return false, fmt.Errorf("EnvFrom must not be defined")
-		}
-
-		for _, env := range container.Env {
-			if env.ValueFrom != nil {
-				return false, fmt.Errorf("env valueFrom can't be defined")
-			}
-		}
-
-		if len(container.VolumeDevices) > 0 {
-			return false, fmt.Errorf("VolumeDevices are not supported")
-		}
-
-		if len(container.VolumeMounts) > 0 {
-			return false, fmt.Errorf("VolumeMounts are not supported")
-		}
-
-		if container.Resources.Requests.Cpu() == nil || container.Resources.Limits.Cpu() == nil || container.Resources.Requests.Cpu().IsZero() || container.Resources.Limits.Cpu().IsZero() {
-			return false, fmt.Errorf("Container cpu requests and limit must be set")
-		}
-
-		if !container.Resources.Requests.Cpu().Equal(*container.Resources.Limits.Cpu()) {
-			return false, fmt.Errorf("CPU request must be set and equal to limits")
-		}
-
-		if container.Resources.Requests.Memory() == nil || container.Resources.Limits.Memory() == nil || container.Resources.Requests.Memory().IsZero() || container.Resources.Limits.Memory().IsZero() {
-			return false, fmt.Errorf("Container memory requests and limit must be set")
-		}
-
-		if !container.Resources.Requests.Memory().Equal(*container.Resources.Limits.Memory()) {
-			return false, fmt.Errorf("Memory request must be set and equal to limits")
-		}
-	}
-
-	if len(spec.Volumes) > 0 {
-		return false, fmt.Errorf("There are more than one volume declared %v", len(spec.Volumes))
+	if request.Kind.Kind == "Pod" {
+		return false, fmt.Errorf("cannot delete Pod now !")
 	}
 
 	return true, nil
 }
+
