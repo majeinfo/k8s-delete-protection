@@ -31,6 +31,8 @@ func main() {
 	}
 	log.SetLevel(log_level)
 
+	log.Debugf("Using cert file %s", certFile)
+	log.Debugf("Using key file %s", keyFile)
 	certs, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		log.Fatalf("Error loading key pair: %v", err)

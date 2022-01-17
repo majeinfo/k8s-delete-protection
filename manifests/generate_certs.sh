@@ -16,7 +16,8 @@ tmpdir=$(mktemp -d)
 
 # Generate CA
 #openssl genrsa -des3 -out $destdir/ca.key 2048
-openssl req -x509 -new -nodes -keyout $destdir/ca.key -sha256 -days 3650 -out $destdir/ca.pem -addext "subjectAltName = DNS:${service}.${namespace}.svc" -subj "/CN=${service}.${namespace}.svc"
+openssl req -x509 -new -nodes -keyout $destdir/ca.key -sha256 -days 3650 -out $destdir/ca.pem \
+		-addext "subjectAltName = DNS:${service}.${namespace}.svc" -subj "/CN=${service}.${namespace}.svc"
 
 cat <<EOF >> ${tmpdir}/csr.conf
 [req]
@@ -24,7 +25,7 @@ default_bits       = 2048
 req_extensions = v3_req
 distinguished_name = req_distinguished_name
 [req_distinguished_name]
-countryName = CL
+countryName = FR
 commonName = test
 [ v3_req ]
 basicConstraints = CA:FALSE
@@ -45,34 +46,36 @@ outManifest=${destdir}/manifest.yaml
 
 subjectCN="${service}.${namespace}.svc"
 echo "Generating certificate for CN=${subjectCN}"
-openssl req -new -nodes -keyout ${destdir}/server-key.pem -config ${tmpdir}/csr.conf -subj "/CN=${subjectCN}" -out ${tmpdir}/server.csr || exit 3
-openssl x509 -req -in ${tmpdir}/server.csr -CA $destdir/ca.pem -CAkey $destdir/ca.key -CAcreateserial -extensions v3_req -extfile ${tmpdir}/csr.conf -out $outCertFile -days 3650
+openssl req -new -nodes -keyout ${destdir}/server-key.pem -config ${tmpdir}/csr.conf \
+		-subj "/CN=${subjectCN}" -out ${tmpdir}/server.csr || exit 3
+openssl x509 -req -in ${tmpdir}/server.csr -CA $destdir/ca.pem -CAkey $destdir/ca.key \
+		-CAcreateserial -extensions v3_req -extfile ${tmpdir}/csr.conf -out $outCertFile -days 3650
 
 cat <<EOF > $outManifest
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
- name: simple-admission.default.cluster.local
+ name: $service.default.cluster.local
  namespace: $namespace
 webhooks:
-- name: simple-admission.default.cluster.local
+- name: $service.default.cluster.local
   clientConfig:
     service:
-      name: simple-admission
+      name: $service
       namespace: $namespace
       path: "/validate"
     caBundle: $(cat $destdir/ca.pem | base64 | tr -d '\n')
   rules:
-  - apiGroups: ["batch"]
+  - apiGroups: [""]
     apiVersions: ["v1"]
-    resources: ["jobs"]
-    operations: ["CREATE"]
+    resources: ["nodes", "pods"]
+    operations: ["DELETE"]
     scope: "*"
-  namespaceSelector:
-    matchExpressions:
-    - key: name
-      operator: In
-      values: ["$namespace"]
+  #namespaceSelector:
+  #  matchExpressions:
+  #  - key: name
+  #    operator: In
+  #    values: ["$namespace"]
   admissionReviewVersions: ["v1"]
   sideEffects: None
   failurePolicy: Fail
@@ -81,7 +84,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   creationTimestamp: null
-  name: admission-certs
+  name: ${service}-certs
   namespace: $namespace
 data:
   server-key.pem: $(cat $outKeyFile | base64 | tr -d '\n')

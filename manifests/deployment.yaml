@@ -2,23 +2,23 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: nodedisruptionbudget
-  name: nodedisruptionbudget
+    app: k8s-delete-protection
+  name: k8s-delete-protection
   namespace: kube-system
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: nodedisruptionbudget
+      app: k8s-delete-protection
   strategy: {}
   template:
     metadata:
       labels:
-        app: nodedisruptionbudget
+        app: k8s-delete-protection
     spec:
       containers:
       - name: admission
-        image: majetraining/nodedisruptionbudget:latest
+        image: majetraining/k8s-delete-protection:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8443
@@ -29,4 +29,4 @@ spec:
       volumes:
       - name: admission-certs
         secret:
-          secretName: nodedisruptionbudget-certs
+          secretName: k8s-delete-protection-certs

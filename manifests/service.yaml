@@ -3,8 +3,8 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
-    app: nodedisruptionbudget
-  name: nodedisruptionbudget
+    app: k8s-delete-protection
+  name: k8s-delete-protection
   namespace: kube-system
 spec:
   ports:
@@ -13,5 +13,5 @@ spec:
     protocol: TCP
     targetPort: 8443
   selector:
-    app: nodedisruptionbudget
+    app: k8s-delete-protection
   type: ClusterIP
