@@ -24,7 +24,7 @@ func main() {
 	flag.StringVar(&keyFile, "key", "server-key.pem", "File containing the x509 private key for the given certificate")
 	flag.StringVar(&port, "port", "8443", "Port to listen")
 	flag.StringVar(&must_rules_filename, "must-rules", "must.rules", "YAML file containing the 'must' rules")
-	flag.StringVar(&must_not_rules_filename, "must-not-riles", "must-not.rules", "YAML file containing the 'must-not' rules")
+	flag.StringVar(&must_not_rules_filename, "must-not-rules", "must-not.rules", "YAML file containing the 'must-not' rules")
 	flag.BoolVar(&verbose, "verbose", false, "Verbosity mode for debugging")
 
 	flag.Parse()

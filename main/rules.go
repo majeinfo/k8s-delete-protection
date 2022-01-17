@@ -9,7 +9,7 @@ import (
 // Rules are "must" or "must_not" but have the same syntax
 type Rule struct {
 	Namespace string `yaml:"namespace"`
-	Kinds []string `yaml:"Kinds"`
+	Kinds []string `yaml:"kinds"`
 	Label string	`yaml:"label"`
 }
 
