@@ -5,8 +5,11 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
-	admission "k8s.io/api/admission/v1beta1"
+	admission "k8s.io/api/admission/v1"
+	core "k8s.io/api/core/v1"
 	k8meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"net/http"
 )
 
@@ -38,8 +41,11 @@ func (handler *AdmissionHandler) handler(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "Error parsing body", http.StatusBadRequest)
 		return
 	}
-	log.Debugf("AdmissionReview %s, %s, %s, %v, %v", request.Request.Name, request.Request.Namespace,
-		request.Request.Operation, request.Request.Kind, request.Request.Resource)
+	log.Debugf("AdmissionReview op=%s on %s %s/%s",
+		request.Request.Operation,
+		request.Request.Kind.Kind,
+		request.Request.Namespace,
+		request.Request.Name)
 
 	result, err := checkRequest(request.Request, handler)
 	response := admission.AdmissionResponse{
@@ -61,7 +67,7 @@ func (handler *AdmissionHandler) handler(w http.ResponseWriter, r *http.Request)
 	json, err := json.Marshal(outReview)
 	log.Debugf("AdmissionResponse %v", outReview.Response.Allowed)
 	if !outReview.Response.Allowed {
-		log.Debugf("Failed reason: %v", outReview.Response.Result.Status)
+		log.Debugf("Failed reason: %v", outReview.Response.Result)
 	}
 
 	if err != nil {
@@ -83,8 +89,27 @@ func checkRequest(request *admission.AdmissionRequest, handler *AdmissionHandler
 		return true, nil
 	}
 
+	//if request.Kind.Kind == "Pod" {
+	//	return false, fmt.Errorf("cannot delete Pod now !")
+	//}
+
+	// Get the object annotations
 	if request.Kind.Kind == "Pod" {
-		return false, fmt.Errorf("cannot delete Pod now !")
+		var pod core.Pod
+		deserializer := serializer.NewCodecFactory(runtime.NewScheme()).UniversalDeserializer()
+		// Object field is null for DELETE, we must use OldObject
+		if _, _, err := deserializer.Decode(request.OldObject.Raw, nil, &pod); err != nil {
+			log.Errorf("Could not unmarshal raw object: %v", err)
+			return false, err
+		}
+
+		log.Debugf("Annotations1: %v", pod.Annotations)
+
+		if err := json.Unmarshal(request.OldObject.Raw, &pod); err != nil {
+			log.Errorf("Could not unmarshal raw object: %v", err)
+			return false, err
+		}
+		log.Debugf("Annotations1: %v", pod.Annotations)
 	}
 
 	return true, nil
