@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k8s-delete-protection
+  namespace: kube-system
+data:
+  must:
+    - namespace: default
+      kinds:
+        - pods
+        - nodes
+      label: allowed-for-deletion
+  must-not:
+    - namespace: *
+      kinds:
+        - "*"
+      label: protected-against-deletion

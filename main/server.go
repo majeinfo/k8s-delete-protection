@@ -8,8 +8,6 @@ import (
 	admission "k8s.io/api/admission/v1"
 	core "k8s.io/api/core/v1"
 	k8meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"net/http"
 )
 
@@ -89,22 +87,18 @@ func checkRequest(request *admission.AdmissionRequest, handler *AdmissionHandler
 		return true, nil
 	}
 
-	//if request.Kind.Kind == "Pod" {
-	//	return false, fmt.Errorf("cannot delete Pod now !")
-	//}
-
 	// Get the object annotations
 	if request.Kind.Kind == "Pod" {
 		var pod core.Pod
-		deserializer := serializer.NewCodecFactory(runtime.NewScheme()).UniversalDeserializer()
+		// We could use the deserializer or json.Unmarshal
+		//deserializer := serializer.NewCodecFactory(runtime.NewScheme()).UniversalDeserializer()
+		//// Object field is null for DELETE, we must use OldObject
+		//if _, _, err := deserializer.Decode(request.OldObject.Raw, nil, &pod); err != nil {
+		//	log.Errorf("Could not unmarshal raw object: %v", err)
+		//	return false, err
+		//}
+
 		// Object field is null for DELETE, we must use OldObject
-		if _, _, err := deserializer.Decode(request.OldObject.Raw, nil, &pod); err != nil {
-			log.Errorf("Could not unmarshal raw object: %v", err)
-			return false, err
-		}
-
-		log.Debugf("Annotations1: %v", pod.Annotations)
-
 		if err := json.Unmarshal(request.OldObject.Raw, &pod); err != nil {
 			log.Errorf("Could not unmarshal raw object: %v", err)
 			return false, err
