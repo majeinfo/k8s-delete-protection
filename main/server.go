@@ -95,6 +95,7 @@ func checkRequest(request *admission.AdmissionRequest) (bool, error) {
 	for _, rule := range must_rules {
 		if doesRuleApply(&rule, request) {
 			// The rule.label must exist !
+			log.Debugf("'must' rules match")
 			if labels, err := getObjectLabels(request); err == nil {
 				if _, present := labels[rule.Label]; !present {
 					log.Errorf("Object must not be deleted because it does not have this label: %s", rule.Label)
@@ -108,6 +109,7 @@ func checkRequest(request *admission.AdmissionRequest) (bool, error) {
 	for _, rule := range must_not_rules {
 		if doesRuleApply(&rule, request) {
 			// The rule.label must not exist !
+			log.Debugf("'must-not' rules match")
 			if labels, err := getObjectLabels(request); err == nil {
 				if _, present := labels[rule.Label]; present {
 					log.Errorf("Object must not be deleted because it has this label: %s", rule.Label)
@@ -130,7 +132,7 @@ func doesRuleApply(rule *Rule, request *admission.AdmissionRequest) bool {
 
 	// namespace must match
 	if rule.Namespace != "*" && (rule.Namespace != request.Namespace) {
-		log.Debugf("Namespaces mismatch: rule: %s, request: %s", rule.Namespace, request.Namespace)
+		log.Debugf("Namespace mismatch: rule: %s, request: %s", rule.Namespace, request.Namespace)
 		return false
 	}
 
@@ -147,7 +149,7 @@ func doesRuleApply(rule *Rule, request *admission.AdmissionRequest) bool {
 		return false
 	}
 
-	return false
+	return true
 }
 
 func getObjectLabels(request *admission.AdmissionRequest) (map[string]string, error) {

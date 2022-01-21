@@ -25,7 +25,7 @@ func load_rules_file(filename string) []Rule {
 	if err != nil {
 		log.Fatalf("YAML error: %v", err)
 	}
-	log.Debugf("Rules: %v", rules)
+	log.Debugf("Rules for file(%s): %v", filename, rules)
 
 	return rules
 }
