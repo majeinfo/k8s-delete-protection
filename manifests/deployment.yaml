@@ -33,6 +33,7 @@ spec:
           httpGet:
             path: /health/liveness
             port: 8443
+            scheme: HTTPS
           initialDelaySeconds: 5
           periodSeconds: 30
       volumes:

@@ -83,7 +83,6 @@ func handleAdmissionRequest(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//func checkRequest(request *admission.AdmissionRequest, handler *AdmissionHandler) (bool, error) {
 func checkRequest(request *admission.AdmissionRequest) (bool, error) {
 	// Sanity checks
 	if request.Operation != "DELETE" {

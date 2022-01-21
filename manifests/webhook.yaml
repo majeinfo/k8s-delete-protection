@@ -14,7 +14,7 @@ webhooks:
   rules:
   - apiGroups: [""]
     apiVersions: ["v1"]
-    resources: ["nodes", "pods"]
+    resources: ["nodes", "pods", "deployments" ]
     operations: ["DELETE"]
     scope: "*"
   #namespaceSelector:
