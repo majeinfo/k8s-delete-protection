@@ -12,6 +12,8 @@ import (
 	"syscall"
 )
 
+// TODO: integrate liveness and readiness probe ?
+
 var (
 	certFile, keyFile, port string
 	verbose bool
@@ -53,9 +55,9 @@ func main() {
 	}
 
 	// Define server  handler
-	handler := AdmissionHandler{}
 	mux := http.NewServeMux()
-	mux.HandleFunc("/validate", handler.handler)
+	mux.HandleFunc("/validate", handleAdmissionRequest)
+	mux.HandleFunc("/health/liveness", handleLiveness)
 	server.Handler = mux
 
 	go func() {

@@ -6,16 +6,19 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	admission "k8s.io/api/admission/v1"
-	core "k8s.io/api/core/v1"
 	k8meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 )
 
-type AdmissionHandler struct {
+// Pod livenessProbe
+func handleLiveness(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // Handle requests
-func (handler *AdmissionHandler) handler(w http.ResponseWriter, r *http.Request) {
+func handleAdmissionRequest(w http.ResponseWriter, r *http.Request) {
 	var body []byte
 	if r.Body != nil {
 		data, err := ioutil.ReadAll(r.Body)
@@ -45,7 +48,7 @@ func (handler *AdmissionHandler) handler(w http.ResponseWriter, r *http.Request)
 		request.Request.Namespace,
 		request.Request.Name)
 
-	result, err := checkRequest(request.Request, handler)
+	result, err := checkRequest(request.Request)
 	response := admission.AdmissionResponse{
 		UID:     request.Request.UID,
 		Allowed: result,
@@ -80,32 +83,102 @@ func (handler *AdmissionHandler) handler(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-func checkRequest(request *admission.AdmissionRequest, handler *AdmissionHandler) (bool, error) {
+//func checkRequest(request *admission.AdmissionRequest, handler *AdmissionHandler) (bool, error) {
+func checkRequest(request *admission.AdmissionRequest) (bool, error) {
 	// Sanity checks
 	if request.Operation != "DELETE" {
 		log.Infof("Skipped resource [%v,%v,%v], check rules to exclude this resource", request.RequestKind.Group, request.RequestKind.Kind, request.Operation)
 		return true, nil
 	}
 
-	// Get the object annotations
-	if request.Kind.Kind == "Pod" {
-		var pod core.Pod
-		// We could use the deserializer or json.Unmarshal
-		//deserializer := serializer.NewCodecFactory(runtime.NewScheme()).UniversalDeserializer()
-		//// Object field is null for DELETE, we must use OldObject
-		//if _, _, err := deserializer.Decode(request.OldObject.Raw, nil, &pod); err != nil {
-		//	log.Errorf("Could not unmarshal raw object: %v", err)
-		//	return false, err
-		//}
-
-		// Object field is null for DELETE, we must use OldObject
-		if err := json.Unmarshal(request.OldObject.Raw, &pod); err != nil {
-			log.Errorf("Could not unmarshal raw object: %v", err)
-			return false, err
+	// Apply "must" rules
+	for _, rule := range must_rules {
+		if doesRuleApply(&rule, request) {
+			// The rule.label must exist !
+			if labels, err := getObjectLabels(request); err == nil {
+				if _, present := labels[rule.Label]; !present {
+					log.Errorf("Object must not be deleted because it does not have this label: %s", rule.Label)
+					return false, nil
+				}
+			}
 		}
-		log.Debugf("Annotations1: %v", pod.Annotations)
+	}
+
+	// Apply "must-not" rules
+	for _, rule := range must_not_rules {
+		if doesRuleApply(&rule, request) {
+			// The rule.label must not exist !
+			if labels, err := getObjectLabels(request); err == nil {
+				if _, present := labels[rule.Label]; present {
+					log.Errorf("Object must not be deleted because it has this label: %s", rule.Label)
+					return false, nil
+				}
+			}
+		}
 	}
 
 	return true, nil
+}
+
+func doesRuleApply(rule *Rule, request *admission.AdmissionRequest) bool {
+	// Rule syntax:
+	// namespace: default
+	// kinds:
+	//   - pods
+	//   - nodes
+	// label: allowed-for-deletion
+
+	// namespace must match
+	if rule.Namespace != "*" && (rule.Namespace != request.Namespace) {
+		log.Debugf("Namespaces mismatch: rule: %s, request: %s", rule.Namespace, request.Namespace)
+		return false
+	}
+
+	// kind must match
+	match := false
+	for _, kind := range rule.Kinds {
+		if kind == "*" || kind == request.Kind.Kind {
+			match = true
+			break
+		}
+	}
+	if !match {
+		log.Debugf("Kinds mismatch: rule: %v, request: %s", rule.Kinds, request.Kind.Kind)
+		return false
+	}
+
+	return false
+}
+
+func getObjectLabels(request *admission.AdmissionRequest) (map[string]string, error) {
+	var labels map[string]string
+	var result map[string]interface{}
+
+	// Try to get the object label without taking care of the object type (Pod, Node, ...)
+	if err := json.Unmarshal(request.OldObject.Raw, &result); err != nil {
+		log.Errorf("Could not unmarshal raw object: %v", err)
+		return labels, err
+	}
+	log.Debugf("%v", result)
+
+	//if request.Kind.Kind == "Pod" {
+	//	var pod core.Pod
+	//	// We could use the deserializer or json.Unmarshal
+	//	//deserializer := serializer.NewCodecFactory(runtime.NewScheme()).UniversalDeserializer()
+	//	//// Object field is null for DELETE, we must use OldObject
+	//	//if _, _, err := deserializer.Decode(request.OldObject.Raw, nil, &pod); err != nil {
+	//	//	log.Errorf("Could not unmarshal raw object: %v", err)
+	//	//	return false, err
+	//	//}
+	//
+	//	// Object field is null for DELETE, we must use OldObject
+	//	if err := json.Unmarshal(request.OldObject.Raw, &pod); err != nil {
+	//		log.Errorf("Could not unmarshal raw object: %v", err)
+	//		return pod.Labels, err
+	//	}
+	//	log.Debugf("Annotations1: %v", pod.Annotations)
+	//}
+
+	return labels, nil
 }
 

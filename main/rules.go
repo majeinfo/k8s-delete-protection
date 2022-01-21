@@ -7,6 +7,7 @@ import (
 )
 
 // Rules are "must" or "must_not" but have the same syntax
+// TODO: does not specify the apiversion/group
 type Rule struct {
 	Namespace string `yaml:"namespace"`
 	Kinds []string `yaml:"kinds"`
