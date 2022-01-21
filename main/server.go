@@ -165,7 +165,9 @@ func getObjectLabels(request *admission.AdmissionRequest) (map[string]string, er
 	log.Debugf("result=%v", result)
 	metadata = result["metadata"].(map[string]interface{})
 	log.Debugf("metadata=%v", metadata)
-	labels = metadata["labels"].(map[string]string)
+	for key, value := range metadata["labels"].(map[string]interface{}) {
+		labels[key] = value.(string)
+	}
 	log.Debugf("labels=%v", labels)
 
 	//if request.Kind.Kind == "Pod" {
