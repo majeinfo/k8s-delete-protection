@@ -56,7 +56,7 @@ func handleAdmissionRequest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		response.Result = &k8meta.Status{
 			Message: fmt.Sprintf("%v", err),
-			Reason:  k8meta.StatusReasonUnauthorized,
+			Reason:  k8meta.StatusReasonForbidden,
 		}
 	}
 
@@ -169,24 +169,6 @@ func getObjectLabels(request *admission.AdmissionRequest) (map[string]string, er
 		labels[key] = value.(string)
 	}
 	log.Debugf("labels=%v", labels)
-
-	//if request.Kind.Kind == "Pod" {
-	//	var pod core.Pod
-	//	// We could use the deserializer or json.Unmarshal
-	//	//deserializer := serializer.NewCodecFactory(runtime.NewScheme()).UniversalDeserializer()
-	//	//// Object field is null for DELETE, we must use OldObject
-	//	//if _, _, err := deserializer.Decode(request.OldObject.Raw, nil, &pod); err != nil {
-	//	//	log.Errorf("Could not unmarshal raw object: %v", err)
-	//	//	return false, err
-	//	//}
-	//
-	//	// Object field is null for DELETE, we must use OldObject
-	//	if err := json.Unmarshal(request.OldObject.Raw, &pod); err != nil {
-	//		log.Errorf("Could not unmarshal raw object: %v", err)
-	//		return pod.Labels, err
-	//	}
-	//	log.Debugf("Annotations1: %v", pod.Annotations)
-	//}
 
 	return labels, nil
 }
