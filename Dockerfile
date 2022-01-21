@@ -8,6 +8,7 @@ RUN go mod download
 
 COPY . .
 
+RUN cd main && go test
 RUN cd main && CGO_ENABLED=0 go build -o /go/bin/k8s-delete-protection
 
 FROM scratch
