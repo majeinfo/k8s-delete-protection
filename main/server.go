@@ -153,15 +153,19 @@ func doesRuleApply(rule *Rule, request *admission.AdmissionRequest) bool {
 }
 
 func getObjectLabels(request *admission.AdmissionRequest) (map[string]string, error) {
-	var labels map[string]string
 	var result map[string]interface{}
+	var metadata map[string]interface{}
+	var labels map[string]string
 
 	// Try to get the object label without taking care of the object type (Pod, Node, ...)
 	if err := json.Unmarshal(request.OldObject.Raw, &result); err != nil {
 		log.Errorf("Could not unmarshal raw object: %v", err)
 		return labels, err
 	}
-	labels = result["labels"].(map[string]string)
+	log.Debugf("result=%v", result)
+	metadata = result["metadata"].(map[string]interface{})
+	log.Debugf("metadata=%v", metadata)
+	labels = metadata["labels"].(map[string]string)
 	log.Debugf("labels=%v", labels)
 
 	//if request.Kind.Kind == "Pod" {
