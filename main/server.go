@@ -99,7 +99,7 @@ func checkRequest(request *admission.AdmissionRequest) (bool, error) {
 			if labels, err := getObjectLabels(request); err == nil {
 				if _, present := labels[rule.Label]; !present {
 					log.Errorf("Object must not be deleted because it does not have this label: %s", rule.Label)
-					return false, nil
+					return false, fmt.Errorf("Object must not be deleted because it does not have this label: %s", rule.Label)
 				}
 			}
 		}
@@ -113,7 +113,7 @@ func checkRequest(request *admission.AdmissionRequest) (bool, error) {
 			if labels, err := getObjectLabels(request); err == nil {
 				if _, present := labels[rule.Label]; present {
 					log.Errorf("Object must not be deleted because it has this label: %s", rule.Label)
-					return false, nil
+					return false, fmt.Errorf("Object must not be deleted because it has this label: %s", rule.Label)
 				}
 			}
 		}
@@ -161,7 +161,8 @@ func getObjectLabels(request *admission.AdmissionRequest) (map[string]string, er
 		log.Errorf("Could not unmarshal raw object: %v", err)
 		return labels, err
 	}
-	log.Debugf("%v", result)
+	labels = result["labels"].(map[string]string)
+	log.Debugf("labels=%v", labels)
 
 	//if request.Kind.Kind == "Pod" {
 	//	var pod core.Pod

@@ -7,11 +7,11 @@ data:
   must:
     - namespace: default
       kinds:
-        - pods
-        - nodes
+        - Pod
+        - Node
       label: allowed-for-deletion
   must-not:
-    - namespace: *
+    - namespace: "*"
       kinds:
         - "*"
       label: protected-against-deletion
