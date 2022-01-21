@@ -155,7 +155,7 @@ func doesRuleApply(rule *Rule, request *admission.AdmissionRequest) bool {
 func getObjectLabels(request *admission.AdmissionRequest) (map[string]string, error) {
 	var result map[string]interface{}
 	var metadata map[string]interface{}
-	var labels map[string]string
+	labels := make(map[string]string)
 
 	// Try to get the object label without taking care of the object type (Pod, Node, ...)
 	if err := json.Unmarshal(request.OldObject.Raw, &result); err != nil {
