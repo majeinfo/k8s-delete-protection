@@ -91,10 +91,10 @@ func checkRequest(request *admission.AdmissionRequest) (bool, error) {
 	}
 
 	// Apply "must" rules
-	for _, rule := range must_rules {
+	for idx, rule := range must_rules {
 		if doesRuleApply(&rule, request) {
 			// The rule.label must exist !
-			log.Debugf("'must' rules match")
+			log.Debugf("'must' rule #%d match", idx)
 			if labels, err := getObjectLabels(request); err == nil {
 				if _, present := labels[rule.Label]; !present {
 					log.Errorf("Object must not be deleted because it does not have this label: %s", rule.Label)
@@ -105,10 +105,10 @@ func checkRequest(request *admission.AdmissionRequest) (bool, error) {
 	}
 
 	// Apply "must-not" rules
-	for _, rule := range must_not_rules {
+	for idx, rule := range must_not_rules {
 		if doesRuleApply(&rule, request) {
 			// The rule.label must not exist !
-			log.Debugf("'must-not' rules match")
+			log.Debugf("'must-not' rule #%d match", idx)
 			if labels, err := getObjectLabels(request); err == nil {
 				if _, present := labels[rule.Label]; present {
 					log.Errorf("Object must not be deleted because it has this label: %s", rule.Label)

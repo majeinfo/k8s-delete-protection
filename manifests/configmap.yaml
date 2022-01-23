@@ -4,13 +4,17 @@ metadata:
   name: k8s-delete-protection
   namespace: kube-system
 data:
-  must:
+  must: |
     - namespace: default
       kinds:
         - Pod
+        - Deployment
+      label: allowed-for-deletion
+    - namespace: "*"
+      kinds:
         - Node
       label: allowed-for-deletion
-  must-not:
+  must-not: |
     - namespace: "*"
       kinds:
         - "*"

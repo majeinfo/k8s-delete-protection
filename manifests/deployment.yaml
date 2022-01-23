@@ -20,6 +20,16 @@ spec:
       - name: admission
         image: majetraining/k8s-delete-protection:latest
         imagePullPolicy: IfNotPresent
+        args:
+        - -cert 
+        - /certs/server.pem
+        - -key 
+        - /certs/server-key.pem
+        - -must-rules
+        - /config/must
+        - -must-not-rules
+        - /config/must-not
+        - -verbose
         ports:
         - containerPort: 8443
         volumeMounts:
