@@ -12,16 +12,15 @@ import (
 	"syscall"
 )
 
-// TODO: integrate liveness and readiness probe ?
-
 var (
-	certFile, keyFile, port string
-	verbose bool
-	must_rules_filename, must_not_rules_filename string
 	must_rules, must_not_rules []Rule
 )
 
 func main() {
+	var certFile, keyFile, port string
+	var verbose bool
+	var must_rules_filename, must_not_rules_filename string
+
 	flag.StringVar(&certFile, "cert", "server.pem", "File containing the x509 Certificate for HTTPS")
 	flag.StringVar(&keyFile, "key", "server-key.pem", "File containing the x509 private key for the given certificate")
 	flag.StringVar(&port, "port", "8443", "Port to listen")

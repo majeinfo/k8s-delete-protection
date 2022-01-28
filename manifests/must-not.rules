@@ -1,0 +1,4 @@
+- namespace: "*"
+  kinds:
+    - "*"
+  label: protected-against-deletion

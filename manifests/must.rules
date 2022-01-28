@@ -1,0 +1,9 @@
+- namespace: default
+  kinds:
+    - Pod
+    - Deployment
+  label: allowed-for-deletion
+- namespace: "*"
+  kinds:
+    - Node
+  label: allowed-for-deletion
