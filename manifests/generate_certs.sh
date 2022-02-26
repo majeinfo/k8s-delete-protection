@@ -2,8 +2,9 @@
 
 set -eu
 
-service=$1
-namespace=$2
+# You can change this
+service=k8s-delete-protection
+namespace=kube-system
 
 echo "service is $service"
 echo "namespace is $namespace"
