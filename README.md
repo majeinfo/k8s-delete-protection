@@ -54,13 +54,15 @@ $ ./main [--cert certificate_filename (default: ./server.pem)]
 
 # Installation
 ## Object relationship
-![Objects](https://github.com/majeinfo/k8s-delete-protection/issues/1#issue-1162791146)
+![Objects](https://user-images.githubusercontent.com/14954414/157268992-211a550c-8b82-4dac-b382-aca9f44b7bf6.jpg)
 
 Once the key and certificate are generated, you can modify the rules-file content, then you apply the manifests in the following order :
+```
 - secrets-ca.yaml
 - configmap.yaml
 - deployment.yaml
 - service.yaml
 - webhook.yaml
+```
 
 A Helm Chart is coming soon...
