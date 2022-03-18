@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Chart.Name }}
+  namespace: {{ .Values.namespace }}
+data:
+  must: |
+    {{- with .Values.mustObjects }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  must-not: |
+    {{- with .Values.mustNotObjects }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}

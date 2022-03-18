@@ -1,0 +1,128 @@
+# Default values for chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# If you want to install the resources in a nother namespace,
+# you will need to recreate the certificates
+namespace: kube-system
+
+# The webhook must be defined with a FQDN:
+# indicate here the Domain Name of your Cluster :
+clusterDomainName: cluster.local
+
+# How many Pod in the Deployment of the Admission Controller
+replicaCount: 1
+
+# Enable verbose mode
+verbose: false
+
+image:
+  repository: majetraining/k8s-delete-protection
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "v0.1"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 443
+  targetPort: 8443
+
+ingress:
+  enabled: false
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# This is the label that protected objects MUST have to be deleted
+mustLabel: &mustLabel allowed-for-deletion
+
+# This is the label that protected objects MUST NOT have to be deleted
+mustNotLabel: &mustNotLabel protected-against-deletion
+
+mustObjects:
+  #- namespace: "default"
+  #  kinds:
+  #    - ConfigMap
+  #    - Secret
+  #    - Deployment
+  #  label: *mustLabel
+  - namespace: "*"
+    kinds:
+      - Node
+    label: *mustLabel
+mustNotObjects:
+  - namespace: "*"
+    kinds:
+      - "*"
+    label: *mustNotLabel
+
+# Action taken by the apiserver if uour Admission Controller fails (Ignore or Fail)
+failurePolicy: Ignore
+
+# You can define here what events will trigger the apiserver call our Admission Controller
+triggerRules:
+  - apiGroups: ["*"]
+    apiVersions: ["*"]
+    resources: ["*" ]
+    operations: ["DELETE"]
+    scope: "*"
+  #- apiGroups: [""]
+  #  apiVersions: ["v1"]
+  #  resources: ["nodes", "pods" ]
+  #  operations: ["DELETE"]
+  #  scope: "*"
+  #- apiGroups: ["apps"]
+  #  apiVersions: ["v1"]
+  #  resources: ["deployments" ]
+  #  operations: ["DELETE"]
+  #  scope: "*"
+
+# Private key used by the Admission Controller
+serverKey: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2Z0lCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktnd2dnU2tBZ0VBQW9JQkFRQzRPVXlpUzdOZGwvdzgKTzVNUXFFNmFCRlpadVR6VDU0djQwREhsTlg2Y3pyWDl1Nml5TnVNRFhiYXBObkNOc1luSzRmdG50ZzA0U2VsYgppTE5JME5kSDNsK054MjFkaW1qYTErL0JtV0JtMXVzV09XMkhoejlMeE1MaWVHb29yV1dmNldyRDBiSjlKbFNzCkIxUmhZVkNseTZ2MXRhb1lwUzJDZ1BuSytXV0cwSmwyeXRTTE1Da0FRYk42bUs0OU5ZWmVDL09KdjJFd1FEMkkKNis4ZEhVUjFrOWl4d3ZBSVF0cng3cW5mdmdtM3FzQ0kxditZbEhLN1pJSkpmaWFseU9OeWQ4TldZRm0zdldELwpnd3N4OFlsdnNOM2E2cmkvNmFEMDNqaTJkeFJ2RDFBcnBXbW92S3RjdzNuNkdqd2pOZzQ2ZjRUeDVlcjJFUkNyClM2VFlrR0xGQWdNQkFBRUNnZ0VBTHNDYjZqUTcrT3l4WHJmZndzSno4REpabDd1aTdFUS9DWTRNbTViUDR3dXkKdEFvRDdmWnY5bEs2SUlkb1dRMU5ZdWVtM2RNZDE4TXFMY2lyZHpkSTZ6eE1FN2NnMGpSbUYrUGxQTVNuNm5GdwpoOXRiS0tIeU5sQmhCUWg2S0lpWTJkUnErL2NqelE4RlBnTStMdGg3bHhmeE5CSStjTEs2c2Z2NWFNR1NPbndXCi84MjBEVmFUNWMrK2VaK2syd3ZRWTRxSlpERy9wWTVrQVYrbjdiZStjdCt4bnBBV2VFbWZ2b2NtWGdMKytKai8Ka2QvQ24rNlg1dGduNzVBaVgxYW4vekhhd0J2Y0I2aVFxM1pScHlaaVN6RU5XL1FWZGQ1RHc5R2d6eHE2RWdIcQo2WmI0aG1PT0NmNEl5eXlsTHk3OWJpMUh0WEhucWkrOUt5cEsxS1Zib1FLQmdRRHp3TU9vb3JhOENqeUdDd0pZCjdneWVsSFpPbE5xSk5FTFdNQlN2d2JTejExMkJWbVhJZlN4c0JudDdlVExYM3JNTDY3Nk9oUFNPdzZKLzY4dEcKdzdCWjNFUHQ0aElRZGlkK0hoYjNGc2V4cFRHU3B0Qmt3aTE0d3Fwc0NqWnVWZUNNRVkwcW55Z1JHdWtnQzltNgpUQThGUThtcmNyQ1NndmpKU0pNM3JvMWptd0tCZ1FEQmV0bXN5T2syMWpIdTNKZDNBZEhySHo0RXhxdG5NOHo4CnR2dk1ndkN3ZUZDZmlwOHplMU1qanQ1Ymd4Y2ZzUExta0EybzNLL21sOVY3eUZWaWFtUkd3Y09nZWI3RTFLbVYKUGlqRWVkckViek91QVRtMHZ3QlpheUdnbEMvQzF0L0NrZ0FVT2dpSFZQL2RhK1BuUHVSWTdETzZMYXJjb29Mcwp0bllXUHhDcEh3S0JnRXQ0OEJ3UzVZbXJrYm5mUnNiS1RsWDdtZllTMk9lS3F2Y3V3L2ozZlVBQit3M0U5cGJ4ClN3UFhyZnc1TnFqb1ozL1ZhcGN1UzVxNHNHUHpXbWw2eGV2TTY2dUlTQmVZdmZtcXoybUtRQ0tkQjVCazNqbVUKZGdmaUhtcDlid1VTeWdnVWx5VVBTcFNoUkhXTHRjcWRLamx6RjhwaUpKSDR3NWR2UlVZRVlmcnBBb0dCQUtlNwp5VnB5RXp6bkZRTHZXcUJoZzR0QzJwRnBhczlkcVNpdHVqM2locWQycHU2cFRydGkvd0NrcTBES3RSRlVaa0JjClFudFNWMnloMVFJcSsxc0d3VWhXVXpLY1dUWnE1MW5yT1l5YjEzelVxd2ovSnZmN1htSW03bEE0SisvU09NcUYKcUd2Z28rUXZYR0twVmpyejJ5TDhJeHdVMnp2TDU1VXYyZEFQZkhJaEFvR0JBTFU4dU9DRnlQYnJhVGcxVC91ZwpNVkExVUh6NmJGZnMzVU1PbDB4TlRUYUFLcVh4dmFqQkR5bHBmSXVGaUJpTllQQ0IyOTlsQzgxeDdpcVI1dEFuCjE1L3VrRXZPSGpvS3RMU0x6QWpMMytITklSUGY0aFMyWWFWbUVVRmZYQk1UbUFTTE5CSzBtRzlWSUNjelBGem4KMkp5dFY4YWlFUHlkMzlGbGxray9mYXM5Ci0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0K
+# Certificate used by the Admission Controller (will be presented to the apiserver)
+# IMPORTANT NOTICE:
+# the following certificate is valid for "k8s-delete-protection.kube-system.svc"
+serviceName: k8s-delete-protection
+serverCert: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURpekNDQW5PZ0F3SUJBZ0lVVEc3ZUJ4ckJPNXdjeTdsV2Yvb2VZaVptNW5Vd0RRWUpLb1pJaHZjTkFRRUwKQlFBd01ERXVNQ3dHQTFVRUF3d2xhemh6TFdSbGJHVjBaUzF3Y205MFpXTjBhVzl1TG10MVltVXRjM2x6ZEdWdApMbk4yWXpBZUZ3MHlNakF4TVRjeE1qSXhNakZhRncwek1qQXhNVFV4TWpJeE1qRmFNREF4TGpBc0JnTlZCQU1NCkpXczRjeTFrWld4bGRHVXRjSEp2ZEdWamRHbHZiaTVyZFdKbExYTjVjM1JsYlM1emRtTXdnZ0VpTUEwR0NTcUcKU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLQW9JQkFRQzRPVXlpUzdOZGwvdzhPNU1RcUU2YUJGWlp1VHpUNTR2NAowREhsTlg2Y3pyWDl1Nml5TnVNRFhiYXBObkNOc1luSzRmdG50ZzA0U2VsYmlMTkkwTmRIM2wrTngyMWRpbWphCjErL0JtV0JtMXVzV09XMkhoejlMeE1MaWVHb29yV1dmNldyRDBiSjlKbFNzQjFSaFlWQ2x5NnYxdGFvWXBTMkMKZ1BuSytXV0cwSmwyeXRTTE1Da0FRYk42bUs0OU5ZWmVDL09KdjJFd1FEMkk2KzhkSFVSMWs5aXh3dkFJUXRyeAo3cW5mdmdtM3FzQ0kxditZbEhLN1pJSkpmaWFseU9OeWQ4TldZRm0zdldEL2d3c3g4WWx2c04zYTZyaS82YUQwCjNqaTJkeFJ2RDFBcnBXbW92S3RjdzNuNkdqd2pOZzQ2ZjRUeDVlcjJFUkNyUzZUWWtHTEZBZ01CQUFHamdad3cKZ1prd0NRWURWUjBUQkFJd0FEQUxCZ05WSFE4RUJBTUNCZUF3RXdZRFZSMGxCQXd3Q2dZSUt3WUJCUVVIQXdFdwphZ1lEVlIwUkJHTXdZWUlWYXpoekxXUmxiR1YwWlMxd2NtOTBaV04wYVc5dWdpRnJPSE10WkdWc1pYUmxMWEJ5CmIzUmxZM1JwYjI0dWEzVmlaUzF6ZVhOMFpXMkNKV3M0Y3kxa1pXeGxkR1V0Y0hKdmRHVmpkR2x2Ymk1cmRXSmwKTFhONWMzUmxiUzV6ZG1Nd0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dFQkFMMTcyUkpOZmZ6S2VKOG5EQXVRcWZGcgpPL2N2WDV6TVNDN2lBTnJQOVZUNUp6ZUZuK1pKeU0xWG1udVFKRjV3YVN2dEVIY3BoOVNGUVhRUElsNWx3bFNyCllENGRlYXZLM0VuWEpkSjIxQ25lSEk2NFRMeDFMZFYxUDFtZXZiaG9ZcFF3M1JQc0F3M3lZTUhlOFYrMDAyK0MKTmNwRGFnRGVUc2xCRnFXbDNiK1dFMU5lY1JrUFBsVjJEckJZUEZSNk53UUV0QktpejY4UThidXcyYTk5S0xnaQpXYnIxYlpKV0tZK3JTdFp4QjVNVWxoYm9JMGNWV3RmTENVNmlyY3RvRTY2NWowS3VubWphbTR6UlRuRVlDWlFtCkpJSytaQ3M4WmgrZmRVb1FWa2twQk9yUnFjbUdBOUdLdmN2QW9WaXVUelcrZjJ4cVgzNS9kbzE5K0hsV29rYz0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+# Certificate of the CA that signed the previous certificate !
+caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURkVENDQWwyZ0F3SUJBZ0lVZU5HVkc2d2F3SE00UXo4VzdWYWRBcFovM01Fd0RRWUpLb1pJaHZjTkFRRUwKQlFBd01ERXVNQ3dHQTFVRUF3d2xhemh6TFdSbGJHVjBaUzF3Y205MFpXTjBhVzl1TG10MVltVXRjM2x6ZEdWdApMbk4yWXpBZUZ3MHlNakF4TVRjeE1qSXhNakZhRncwek1qQXhNVFV4TWpJeE1qRmFNREF4TGpBc0JnTlZCQU1NCkpXczRjeTFrWld4bGRHVXRjSEp2ZEdWamRHbHZiaTVyZFdKbExYTjVjM1JsYlM1emRtTXdnZ0VpTUEwR0NTcUcKU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLQW9JQkFRRFczKzFuRGlHTkg1STc0cnFIV3VyRzk1NldtQ2ZnVTBpWgpqNjErUm4vQ3ZPU0VHMURiRW1tNFExOHJTRmpjQ0hCY0JnaUtnNTNTeXNMYWVPK2hLMVJIRVgrQ0pzYmRjZ3hMCnNybWk5ejZxVnRIVmYrY1JWZVc2WjNIdHFKajgvVFBod056YlBaSWQ5TjdqMytkZEtjRnpyaGNWMXc0MG52M0IKSFhjMThaUDJrcXBjUTI0TEVnOUlWaUNpNjBQZXR6N0RyUzhJbDI3MzNJTEpMT2YyZG5wd0xwc2RxQy9zelNaVwpjSHpsWFQwSzZ0S2hJWTRvejk2NnBRSkpPd01rNUgzUDE2dWkyaXNqWGU0V1dOaUZVRm5qR2xtRlFDcDJ1K3FKCmxIVVpKckxKYXF6VW9WR2JFNnpKbWp4bHlaODJ4QXEvd01IS3JuUGs2VTRJSVV3U3QyeGxBZ01CQUFHamdZWXcKZ1lNd0hRWURWUjBPQkJZRUZPdDFHSklwMVA2MDAxRndsRnJ4dy8wdjEwd0dNQjhHQTFVZEl3UVlNQmFBRk90MQpHSklwMVA2MDAxRndsRnJ4dy8wdjEwd0dNQThHQTFVZEV3RUIvd1FGTUFNQkFmOHdNQVlEVlIwUkJDa3dKNElsCmF6aHpMV1JsYkdWMFpTMXdjbTkwWldOMGFXOXVMbXQxWW1VdGMzbHpkR1Z0TG5OMll6QU5CZ2txaGtpRzl3MEIKQVFzRkFBT0NBUUVBeXFpaWthUVVpT2dRaXZvM0NoYndOeTIrMlpJOHI3Y0tSVVdFclc3Nk0xK1hHNHNsRDUrYgpFcGtLWEtBL3dnM1RmbTB1clJ6bWhkYjhBVE1keFFVNDZyR2p2eVRMdzdWRDFoWDU2VG9FSnhPREkyR3VFYUxDCll2T1ViQ3Q5ZE13MzVINVhCSDR6akQ3azJVUXdXQmZUMGpUd0Npcmt5Q3JrZG9ZNTdEbTFUZFhDNWtlNElHN28KRE5uQTBsVzdtNkFPaVVLWi9scXFyK3lTMDdhczZNMHUvOXdNNU5ON0lNcjhpaERwVTRVTmltUjlVNzBVZ0FWNgozdFdMdnp0QnZZT1RneHhpOGtwayt2TjJEdEl2a1lIZEthMDkvaC9Hazd1YlRxTE5aUDBhNEpUSENoQkt4VC9PClBaM1RiYjAxZGVrV29UQjh6NnJ6RXJpelNSL0c0UzRLTXc9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+

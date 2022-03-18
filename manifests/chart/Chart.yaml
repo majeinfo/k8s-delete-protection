@@ -1,0 +1,10 @@
+apiVersion: v2
+name: k8s-delete-controller
+description: Chart for k8s-delete-controller
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+labels:
+  app: k8s-delete-controller
+selectorLabels:
+  app: k8s-delete-controller
