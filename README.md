@@ -65,4 +65,10 @@ Once the key and certificate are generated, you can modify the rules-file conten
 - webhook.yaml
 ```
 
-A Helm Chart is coming soon...
+You can also install this Controller using a Helm Chart : 
+donwload the content of ```manifests/chart/```, then install it :
+```
+$ helm install k8s-delete-controller . --values values.yaml  --set-string verbose=true
+```
+
+
